@@ -10,6 +10,8 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.time.Duration;
+
 @Configuration
 public class DockerClientConfig {
 
@@ -34,11 +36,19 @@ public class DockerClientConfig {
                 .build();
 
         ApacheDockerHttpClient dockerHttpClient = new ApacheDockerHttpClient.Builder()
-                .dockerHost(dockerClientConfig.getDockerHost()).build();
+                .dockerHost(dockerClientConfig.getDockerHost())
+                .maxConnections(5)
+                .connectionTimeout(Duration.ofMillis(300))
+                .responseTimeout(Duration.ofSeconds(3))
+                .build();
 
-       return DockerClientBuilder.getInstance(dockerClientConfig)
-               .withDockerHttpClient(dockerHttpClient)
-               .build();
+        DockerClient client =  DockerClientBuilder.getInstance(dockerClientConfig)
+                .withDockerHttpClient(dockerHttpClient)
+                .build();
+
+        client.pingCmd().exec();
+
+        return client;
     }
 
     @Bean
